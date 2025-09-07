@@ -4,19 +4,28 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import sqlite3, os, datetime
 from analyzer import analyze_text
+from contextlib import asynccontextmanager
 
 DB_PATH = "app.db"
-app = FastAPI()
-#app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # This function runs once when the application starts up
+    init_db()
+    yield
+
+app = FastAPI(lifespan=lifespan)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 def init_db():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
+    # STEP 1: Add the UNIQUE constraint to the 'date' column
     cur.execute("""
     CREATE TABLE IF NOT EXISTS entries(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL,
+      date TEXT NOT NULL UNIQUE, 
       text TEXT NOT NULL,
       emojis TEXT,
       mood INTEGER,
@@ -27,21 +36,14 @@ def init_db():
     con.commit()
     con.close()
 
-@app.on_event("startup")
-def on_startup():
-    os.makedirs("templates", exist_ok=True)
-    os.makedirs("static", exist_ok=True)
-    init_db()
-
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    # 直近30日を取得
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
     cur.execute("SELECT date, mood, sentiment_score FROM entries ORDER BY date DESC LIMIT 30")
     rows = cur.fetchall()
     con.close()
-    rows = rows[::-1]  # 昇順描画
+    rows = rows[::-1]
     dates = [r[0] for r in rows]
     moods = [r[1] or 0 for r in rows]
     scores = [r[2] if r[2] is not None else 0 for r in rows]
@@ -50,8 +52,14 @@ def home(request: Request):
     if len(scores) >= 3:
         last3 = scores[-3:]
         avg3 = sum(last3)/3
-        if avg3 < -0.2:
+        if avg3 < -0.5:
+            suggestion = "パーッと遊びに出かけませんか？"
+        elif avg3 < -0.2:
             suggestion = "💡最近少し低調です。近所を5分散歩してみませんか？🌿"
+        elif avg3 > 0.3:
+            suggestion = "むっちゃ元気！"
+        elif avg3 > 0:
+            suggestion = "はっぴーはっぴーはっぴー"
 
     return templates.TemplateResponse(
         "home.html",
@@ -64,25 +72,23 @@ def entry_form(request: Request):
     return templates.TemplateResponse("entry.html", {"request": request, "today": today})
 
 @app.post("/entry")
-def create_entry(
+def create_or_update_entry(
     date: str = Form(...),
     text: str = Form(...),
     emojis: str = Form(""),
     mood: int = Form(3),
 ):
-    # Google NL API で分析（失敗時はローカル簡易解析）
     s = analyze_text(text=text, emojis=emojis, mood=mood)
-
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
+    # STEP 2: Use INSERT OR REPLACE to handle both new entries and updates
     cur.execute("""
-      INSERT INTO entries(date, text, emojis, mood, sentiment_score, sentiment_magnitude, created_at)
+      INSERT OR REPLACE INTO entries(date, text, emojis, mood, sentiment_score, sentiment_magnitude, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (date, text, emojis, mood, s["score"], s["magnitude"], datetime.datetime.utcnow().isoformat()))
     con.commit()
     con.close()
     return RedirectResponse("/", status_code=303)
-
 
 @app.get("/delete", response_class=HTMLResponse)
 def delete_form(request: Request):
@@ -101,3 +107,4 @@ def delete_entry(date: str = Form(...)):
     con.commit()
     con.close()
     return RedirectResponse("/", status_code=303)
+
