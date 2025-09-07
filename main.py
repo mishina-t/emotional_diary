@@ -7,7 +7,7 @@ from analyzer import analyze_text
 
 DB_PATH = "app.db"
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
+#app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 def init_db():
@@ -79,6 +79,25 @@ def create_entry(
       INSERT INTO entries(date, text, emojis, mood, sentiment_score, sentiment_magnitude, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (date, text, emojis, mood, s["score"], s["magnitude"], datetime.datetime.utcnow().isoformat()))
+    con.commit()
+    con.close()
+    return RedirectResponse("/", status_code=303)
+
+
+@app.get("/delete", response_class=HTMLResponse)
+def delete_form(request: Request):
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    cur.execute("SELECT date FROM entries ORDER BY date DESC")
+    dates = [d[0] for d in cur.fetchall()]
+    con.close()
+    return templates.TemplateResponse("delete.html", {"request": request, "dates": dates})
+
+@app.post("/delete")
+def delete_entry(date: str = Form(...)):
+    con = sqlite3.connect(DB_PATH)
+    cur = con.cursor()
+    cur.execute("DELETE FROM entries WHERE date = ?", (date,))
     con.commit()
     con.close()
     return RedirectResponse("/", status_code=303)
