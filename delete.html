@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日記を削除 - emotional diary</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #e06c75 0%, #b23b42 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        select:focus {
+            outline: none;
+            border-color: #c84a4a;
+        }
+        .submit-btn {
+            background: #c84a4a;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        .submit-btn:hover {
+            background: #b23b42;
+        }
+        .back-link {
+            display: inline-block;
+            color: #333;
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .warning {
+            color: #b23b42;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← ホームに戻る</a>
+        <h1>🗑️ 日記を削除</h1>
+        
+        {% if not dates %}
+            <p style="text-align: center;">削除できる日記がありません。</p>
+        {% else %}
+            <form method="post" action="/delete" onsubmit="return confirm('本当にこの日記を削除しますか？この操作は取り消せません。');">
+                <div class="form-group">
+                    <label for="date">削除する日記の日付を選択してください</label>
+                    <select id="date" name="date" required>
+                        {% for d in dates %}
+                        <option value="{{ d }}">{{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <p class="warning">注意: 削除した日記は元に戻せません。</p>
+                
+                <button type="submit" class="submit-btn">この日記を削除する</button>
+            </form>
+        {% endif %}
+    </div>
+</body>
+</html>
