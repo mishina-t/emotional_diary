@@ -37,13 +37,19 @@
             margin-top: 30px;
         }
         .entry-link, .delete-link {
-            flex: 1;
+            flex: 1; /* Make buttons share space equally */
             text-align: center;
             color: white;
             padding: 12px 24px;
             text-decoration: none;
             border-radius: 25px;
             transition: background 0.3s;
+        }
+        .header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+        }
+        .logout-link {
+            color: #667eea; text-decoration: none; font-weight: bold;
         }
         .entry-link {
             background: #667eea;
@@ -52,11 +58,11 @@
             background: #5a6fd8;
         }
         .delete-link {
-            background: #e06c75; 
+            background: #e06c75; /* Distinct color for delete */
         }
         .delete-link:hover {
             background: #c84a4a;
-        }
+        }    
         .suggestion {
             background: #e8f5e8;
             border-left: 4px solid #4caf50;
@@ -94,6 +100,13 @@
 <body>
     <div class="container">
         <h1>📝 Emotional Diary</h1>
+
+        {% if username %}
+        <div class="header">
+            <span>こんにちは, <strong>{{ username }}</strong> さん</span>
+            <a href="/logout" class="logout-link">ログアウト</a>
+        </div>
+        {% endif %}
         
         {% if suggestion %}
         <div class="suggestion">
@@ -130,7 +143,7 @@
     </div>
 
     <script>
-        // Set bar height from data attribute
+        // バーの高さを設定
         document.querySelectorAll('.mood-bar[data-height]').forEach(bar => {
             const height = bar.getAttribute('data-height');
             bar.style.height = height + 'px';
@@ -138,4 +151,3 @@
     </script>
 </body>
 </html>
-
