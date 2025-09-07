@@ -31,18 +31,31 @@
             background: #f8f9fa;
             border-radius: 10px;
         }
-        .entry-link {
-            display: inline-block;
-            background: #667eea;
+        .button-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .entry-link, .delete-link {
+            flex: 1;
+            text-align: center;
             color: white;
             padding: 12px 24px;
             text-decoration: none;
             border-radius: 25px;
-            margin: 20px 0;
             transition: background 0.3s;
+        }
+        .entry-link {
+            background: #667eea;
         }
         .entry-link:hover {
             background: #5a6fd8;
+        }
+        .delete-link {
+            background: #e06c75; 
+        }
+        .delete-link:hover {
+            background: #c84a4a;
         }
         .suggestion {
             background: #e8f5e8;
@@ -110,11 +123,14 @@
             </div>
         </div>
         
-        <a href="/entry" class="entry-link">📝 新しい日記を書く</a>
+        <div class="button-container">
+            <a href="/entry" class="entry-link">📝 新しい日記を書く</a>
+            <a href="/delete" class="delete-link">🗑️ 日記を削除</a>
+        </div>
     </div>
 
     <script>
-        // バーの高さを設定
+        // Set bar height from data attribute
         document.querySelectorAll('.mood-bar[data-height]').forEach(bar => {
             const height = bar.getAttribute('data-height');
             bar.style.height = height + 'px';
@@ -122,3 +138,4 @@
     </script>
 </body>
 </html>
+
